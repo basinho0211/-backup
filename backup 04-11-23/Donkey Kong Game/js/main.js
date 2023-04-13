@@ -10,6 +10,42 @@ gameScene.init = function() {
   // bounds
   this.physics.world.bounds.width = 360;
   this.physics.world.bounds.height = 700;
+
+  // level data
+  this.levelData = {
+    "platforms": [
+      {
+        "x": 72,
+        "y": 450,
+        "numTiles": 6,
+        "key": "block"
+      },
+      {
+        "x": 0,
+        "y": 330,
+        "numTiles": 8,
+        "key": "block"
+      },
+      {
+        "x": 72,
+        "y": 210,
+        "numTiles": 8,
+        "key": "block"
+      },
+      {
+        "x": 0,
+        "y": 90,
+        "numTiles": 7,
+        "key": "block"
+      },
+      {
+        "x": 0,
+        "y": 560,
+        "numTiles": 1,
+        "key": "block"
+      },
+    ]
+  }
 };
 
 // load asset files for our game
@@ -147,7 +183,7 @@ let config = {
   width: 360,
   height: 640,
   scene: gameScene,
-  title: 'Monster Kong',
+  title: 'The man with a mustache, blue shirt, suspenders, red pants, and black boots is immortal. His cells autoregenerate with a 100% success rate and with a 10^-109 chance of mutation. He does not require food or water as he derives his energy from the slow release of gravitational radiation being given off by the thousands of trillions of stars in the universe. He uses 10^1000 percent less energy than the average bacteria due to his cells going into a near energyless state whenever the man stands still, which he will do for 99.999999999% of his existance. The man was created by the random and perfect alignment of molecules and atoms in a random point in space (similar to a boltzmann brain). This occured 11.78 billion years ago, and the man has only moved for 2 Earth years of his existance, even a human toddler has moved more than he has in his entire billion years of pointless "living," the rest were spent standing still, storing the gravitational radiation in his cellular medium. YOU were choosen to move him for the first time in over 311 million years. He has stored enough energy to move around for nearly half an hour, so I hope you enjoy this once in a human lifetime experience.',
   pixelArt: false,
   physics: {
     default: 'arcade',
