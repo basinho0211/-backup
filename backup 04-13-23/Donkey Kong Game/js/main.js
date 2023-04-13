@@ -10,42 +10,6 @@ gameScene.init = function() {
   // bounds
   this.physics.world.bounds.width = 360;
   this.physics.world.bounds.height = 700;
-
-  // level data
-  this.levelData = {
-    "platforms": [
-      {
-        "x": 72,
-        "y": 450,
-        "numTiles": 6,
-        "key": "block"
-      },
-      {
-        "x": 0,
-        "y": 330,
-        "numTiles": 8,
-        "key": "block"
-      },
-      {
-        "x": 72,
-        "y": 210,
-        "numTiles": 8,
-        "key": "block"
-      },
-      {
-        "x": 0,
-        "y": 90,
-        "numTiles": 7,
-        "key": "block"
-      },
-      {
-        "x": 0,
-        "y": 560,
-        "numTiles": 1,
-        "key": "block"
-      },
-    ]
-  }
 };
 
 // load asset files for our game
@@ -119,6 +83,11 @@ gameScene.create = function() {
 
   // create game bounds
   this.player.body.setCollideWorldBounds(true);
+
+  //check where we are on the screen
+  this.input.on('pointerdown', function(pointer){
+    console.log(pointer.x, pointer.y);
+  })
 
 
 };
