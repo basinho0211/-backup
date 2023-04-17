@@ -36,13 +36,18 @@ gameScene.preload = function() {
     margin: 1,
     spacing: 1
   });
+
+  // load level data
+  this.load.json('levelData', 'assets/json/levelData.json');
 };
 
 // executed once, after assets were loaded
 gameScene.create = function() {
-
-  // create platforms group
-  this.platforms = this.add.group();
+  //call levelData function
+  this.setupLevel();
+  
+  // create platforms group (comment)
+  // this.platforms = this.add.group();
 
   // enable cursor keys
   this.cursors = this.input.keyboard.createCursorKeys();
@@ -60,22 +65,22 @@ gameScene.create = function() {
   
   // creating AND adding sprites to physics system
     // ground
-    let ground = this.physics.add.sprite(180, 300, 'ground', true);
-    // let ground2 = this.physics.add.sprite(180, -100, 'ground');
-    this.platforms.add(ground);
+    // let ground = this.physics.add.sprite(180, 300, 'ground', true);
+    // // let ground2 = this.physics.add.sprite(180, -100, 'ground');
+    // this.platforms.add(ground);
 
-    // platform
-    let platform = this.add.tileSprite(180, 200,4 * 36 ,1 * 30 , 'block');
-    this.physics.add.existing(platform, true);
-    this.platforms.add(platform);
+    // // platform
+    // let platform = this.add.tileSprite(180, 200,4 * 36 ,1 * 30 , 'block');
+    // this.physics.add.existing(platform, true);
+    // this.platforms.add(platform);
 
     // player
     this.player = this.add.sprite(180, -100, 'player', 3);
     this.physics.add.existing(this.player);
 
   // disable ground gravity / make immovable
-  ground.body.allowGravity = false;
-  ground.body.immovable = true;
+  // ground.body.allowGravity = false;
+  // ground.body.immovable = true;
 
   // collision detection
   // this.physics.add.collider(ground, ground2);
@@ -88,7 +93,6 @@ gameScene.create = function() {
   this.input.on('pointerdown', function(pointer){
     console.log(pointer.x, pointer.y);
   })
-
 
 };
 
@@ -144,6 +148,36 @@ gameScene.update = function() {
     // set frame
     this.player.setFrame(2);
   }
+};
+
+// sets up the level's elements
+gameScene.setupLevel=function(){
+  this.platforms=this.add.group();
+
+  //parse the level data
+  this.levelData=this.cache.json.get('levelData');
+
+  //add in the platforms and ground
+  for(let i =0;i<this.levelData.platforms.length;i++){
+    let curr=this.levelData.platforms[i];
+    let newObject;
+    //create object
+    if(curr.numTiles == 1){
+      //create a sprite
+      newObject = this.add.sprite(curr.x,curr.y,curr.key).setOrigin(0);
+    }
+    else {
+      let width = this.textures.get(curr.key).get(0).width;
+      let height = this.textures.get(curr.key).get(0).height;
+      newObject = this.add.tileSprite(curr.x,curr.y,curr.numTiles*width,height,curr.key).setOrigin(0);
+    };
+
+    //enable physics!
+    this.physics.add.existing(newObject,true);
+
+    //add physics to platform group
+    this.platforms.add(newObject);
+  };
 };
 
 // our game's configuration
