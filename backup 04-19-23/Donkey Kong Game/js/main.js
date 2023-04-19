@@ -30,7 +30,7 @@ gameScene.preload = function() {
     spacing: 1
   });
 
-  this.load.spritesheet('fire', 'assets/images/fire_spritesheet.png', {
+  this.load.spritesheet('fires', 'assets/images/fire_spritesheet.png', {
     frameWidth: 20,
     frameHeight: 21,
     margin: 1,
@@ -43,14 +43,20 @@ gameScene.preload = function() {
 
 // executed once, after assets were loaded
 gameScene.create = function() {
-  //call levelData function
-  this.setupLevel();
+    
+    // fire animation
+    this.anims.create({
+      key:'burning',
+      frames: this.anims.generateFrameNames('fires', {
+        frames:[0, 1]
+      }),
+      
+      // animation speed
+      frameRate: 5,
   
-  // create platforms group (comment)
-  // this.platforms = this.add.group();
-
-  // enable cursor keys
-  this.cursors = this.input.keyboard.createCursorKeys();
+      repeat: -1
+  
+    });
 
   // player animation
   this.anims.create({
@@ -62,29 +68,18 @@ gameScene.create = function() {
     yoyo: true,
     repeat: -1
   });
-  
-  // creating AND adding sprites to physics system
-    // ground
-    // let ground = this.physics.add.sprite(180, 300, 'ground', true);
-    // // let ground2 = this.physics.add.sprite(180, -100, 'ground');
-    // this.platforms.add(ground);
 
-    // // platform
-    // let platform = this.add.tileSprite(180, 200,4 * 36 ,1 * 30 , 'block');
-    // this.physics.add.existing(platform, true);
-    // this.platforms.add(platform);
+  //call levelData function
+  this.setupLevel();
 
-    // player
-    this.player = this.add.sprite(180, -100, 'player', 3);
-    this.physics.add.existing(this.player);
 
-  // disable ground gravity / make immovable
-  // ground.body.allowGravity = false;
-  // ground.body.immovable = true;
 
+  // enable cursor keys
+  this.cursors = this.input.keyboard.createCursorKeys();
+ 
   // collision detection
-  // this.physics.add.collider(ground, ground2);
-  this.physics.add.collider(this.player, this.platforms)
+  this.physics.add.collider(this.player, this.platforms);
+  this.physics.add.collider(this.goal,this.platforms);
 
   // create game bounds
   this.player.body.setCollideWorldBounds(true);
@@ -158,7 +153,7 @@ gameScene.setupLevel=function(){
   this.levelData=this.cache.json.get('levelData');
 
   //add in the platforms and ground
-  for(let i =0;i<this.levelData.platforms.length;i++){
+  for(let i=0;i<this.levelData.platforms.length;i++){
     let curr=this.levelData.platforms[i];
     let newObject;
     //create object
@@ -170,14 +165,42 @@ gameScene.setupLevel=function(){
       let width = this.textures.get(curr.key).get(0).width;
       let height = this.textures.get(curr.key).get(0).height;
       newObject = this.add.tileSprite(curr.x,curr.y,curr.numTiles*width,height,curr.key).setOrigin(0);
-    };
-
-    //enable physics!
-    this.physics.add.existing(newObject,true);
-
-    //add physics to platform group
-    this.platforms.add(newObject);
   };
+
+  // enable physics
+
+  this.physics.add.existing(newObject, true);
+  this.platforms.add(newObject);
+
+};
+
+  // Adding Fire
+  this.fires=this.add.group();
+  for(i=0;i<this.levelData.fires.length;i++){
+    let cur=this.levelData.fires[i];
+    let newObj = this.add.sprite(cur.x,cur.y, 'fires').setOrigin(0);
+    
+    //enable physics for fire
+    this.physics.add.existing(newObj);
+    newObj.body.allowGravity = false;
+    newObj.body.immovable = true;
+
+    // play fire animation
+
+    newObj.anims.play('burning');
+
+    // add fires to their group
+    this.fires.add(newObj);
+
+  };
+
+  // adding player
+  this.player = this.add.sprite(this.levelData.player.x,this.levelData.player.y, 'player', 3);
+  this.physics.add.existing(this.player);
+
+  // adding goal
+  this.goal = this.add.sprite(this.levelData.goal.x,this.levelData.goal.y,'goal');
+  this.physics.add.existing(this.goal);
 };
 
 // our game's configuration
