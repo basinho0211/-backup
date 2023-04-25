@@ -45,32 +45,41 @@ gameScene.preload = function() {
 gameScene.create = function() {
     
     // fire animation
-    this.anims.create({
-      key:'burning',
-      frames: this.anims.generateFrameNames('fires', {
-        frames:[0, 1]
-      }),
-      
-      // animation speed
-      frameRate: 5,
-  
-      repeat: -1
-  
-    });
+    if(!this.anims.get('burning')){
+      this.anims.create({
+        key:'burning',
+        frames: this.anims.generateFrameNames('fires', {
+          frames:[0, 1]
+        }),
+        
+        // animation speed
+        frameRate: 5,
+    
+        repeat: -1
+    
+      });
+    }
+    
 
   // player animation
-  this.anims.create({
-    key: 'walking',
-    frames: this.anims.generateFrameNames('player', {
-      frames: [0, 1, 2]
-    }),
-    frameRate: 12,
-    yoyo: true,
-    repeat: -1
-  });
+  if(!this.anims.get('walking')){
+    this.anims.create({
+      key: 'walking',
+      frames: this.anims.generateFrameNames('player', {
+        frames: [0, 1, 2]
+      }),
+      frameRate: 12,
+      yoyo: true,
+      repeat: -1
+    });
+  }
+  
 
   //call levelData function
   this.setupLevel();
+
+  // int spawner
+  this.setupSpawner();
 
 
 
@@ -80,6 +89,9 @@ gameScene.create = function() {
   // collision detection
   this.physics.add.collider(this.player, this.platforms);
   this.physics.add.collider(this.goal,this.platforms);
+  this.physics.add.collider(this.barrels, this.platforms);
+  // create overlap to restart scene (make this seperate later)
+  this.physics.add.overlap(this.player, [this.fires, this.goal, this.barrels], this.restartGame, null, this);
 
   // create game bounds
   this.player.body.setCollideWorldBounds(true);
@@ -147,7 +159,7 @@ gameScene.update = function() {
 
 // sets up the level's elements
 gameScene.setupLevel=function(){
-  this.platforms=this.add.group();
+  this.platforms=this.physics.add.staticGroup();
 
   //parse the level data
   this.levelData=this.cache.json.get('levelData');
@@ -175,17 +187,15 @@ gameScene.setupLevel=function(){
 };
 
   // Adding Fire
-  this.fires=this.add.group();
+  this.fires=this.physics.add.group({
+    allowGravity: false,
+    immovable: true
+  });
   for(i=0;i<this.levelData.fires.length;i++){
     let cur=this.levelData.fires[i];
     let newObj = this.add.sprite(cur.x,cur.y, 'fires').setOrigin(0);
-    
-    //enable physics for fire
-    this.physics.add.existing(newObj);
-    newObj.body.allowGravity = false;
-    newObj.body.immovable = true;
 
-    // play fire animation
+    // play burning fire animation
 
     newObj.anims.play('burning');
 
@@ -198,9 +208,63 @@ gameScene.setupLevel=function(){
   this.player = this.add.sprite(this.levelData.player.x,this.levelData.player.y, 'player', 3);
   this.physics.add.existing(this.player);
 
+  // set up camera bounds
+  this.cameras.main.setBounds(0, 0, 360, 700);
+  this.cameras.main.startFollow(this.player);
+
   // adding goal
   this.goal = this.add.sprite(this.levelData.goal.x,this.levelData.goal.y,'goal');
   this.physics.add.existing(this.goal);
+};
+gameScene.restartGame=function(sourceSprite, targetSprite){
+  // fade out camera
+  this.cameras.main.fade(500);
+
+  // finish fade out and reload the scene
+  this.cameras.main.on('camerafadeoutcomplete', function(camera, effect) {
+    this.scene.restart()
+  }, this);
+
+};
+
+gameScene.setupSpawner=function(){
+  //physics group for barrels
+  this.barrels=this.physics.add.group({
+    bounceY: 0.1,
+    bounceX: 1,
+    collideWorldBounds: true
+
+
+  },);
+
+  // spawn barrels
+  let spawnEvent=this.time.addEvent({
+    delay: this.levelData.spawner.interval,
+    loop: true,
+    callbackScope: this,
+    callback: function(){
+      // create the barrels!
+      let barrel = this.barrels.create(this.goal.x, this.goal.y, 'barrel');
+      // reactivate used barrels
+      barrel.setActive(true);
+      barrel.setVisible(true);
+      barrel.body.enable = true;
+      // set barrel's properties
+        // speed
+        barrel.setVelocityX(this.levelData.spawner.speed);
+        // lifespan
+        this.time.addEvent({
+          delay: this.levelData.spawner.lifespan,
+          repeat: 0,
+          callbackScope: this,
+          callback: function() {
+            this.barrels.killAndHide(barrel);
+            barrel.body.enable = false;
+          }
+        }, this)
+
+    }
+  }, this);
 };
 
 // our game's configuration
@@ -209,13 +273,13 @@ let config = {
   width: 360,
   height: 640,
   scene: gameScene,
-  title: 'The man with a mustache, blue shirt, suspenders, red pants, and black boots is immortal. His cells autoregenerate with a 100% success rate and with a 10^-109 chance of mutation. He does not require food or water as he derives his energy from the slow release of gravitational radiation being given off by the thousands of trillions of stars in the universe. He uses 10^1000 percent less energy than the average bacteria due to his cells going into a near energyless state whenever the man stands still, which he will do for 99.999999999% of his existance. The man was created by the random and perfect alignment of molecules and atoms in a random point in space (similar to a boltzmann brain). This occured 11.78 billion years ago, and the man has only moved for 2 Earth years of his existance, even a human toddler has moved more than he has in his entire billion years of pointless "living," the rest were spent standing still, storing the gravitational radiation in his cellular medium. YOU were choosen to move him for the first time in over 311 million years. He has stored enough energy to move around for nearly half an hour, so I hope you enjoy this once in a human lifetime experience.',
+  title: '._.',
   pixelArt: false,
   physics: {
     default: 'arcade',
     arcade: {
       gravity: {y: 700},
-      debug: true
+      debug: false
     }
   }
 };
