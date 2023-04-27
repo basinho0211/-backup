@@ -5,7 +5,7 @@ let gameScene = new Phaser.Scene('Game');
 gameScene.init = function() {
   // player speed
   this.playerSpeed = 200;
-  this.jumpSpeed = -345;
+  this.jumpSpeed = -425;
 
   // bounds
   this.physics.world.bounds.width = 360;
