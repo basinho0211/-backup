@@ -1,15 +1,15 @@
 // create a new scene
 let gameScene = new Phaser.Scene('Game');
-
 // some parameters for our scene
 gameScene.init = function() {
   // player speed
   this.playerSpeed = 200;
-  this.jumpSpeed = -425;
+  this.jumpSpeed = -250;
 
   // bounds
-  this.physics.world.bounds.width = 360;
+  this.physics.world.bounds.width = 3000;
   this.physics.world.bounds.height = 700;
+  
 };
 
 // load asset files for our game
@@ -24,12 +24,15 @@ gameScene.preload = function() {
   this.load.image('crystal', 'assets/images/crystal.gif');
 
   // load auido
+  this.playSound = 1;
   this.load.audio('barrel',['assets/audio/barrel.wav']);
   this.load.audio('fire', ['assets/audio/fire.wav']);
   this.load.audio('barrelHurt', ['assets/audio/barrelHurt.wav']);
   this.load.audio('fireHurt', ['assets/audio/fireHurt.wav']);
   this.load.audio('win1', ['assets/audio/win1.wav']);
   this.load.audio('win2', ['assets/audio/win2.wav']);
+  this.load.audio('falling1', ['assets/audio/falling1.wav']);
+  this.load.audio('falling2', ['assets/audio/falling2.wav']);
 
   // load spritesheets
   this.load.spritesheet('player', 'assets/images/player_spritesheet.png', {
@@ -66,6 +69,8 @@ gameScene.create = function() {
     this.fireHurt = this.sound.add('fireHurt', {loop: false});
     this.winEffect = this.sound.add('win1', {loop: false});
     this.winMan = this.sound.add('win2', {loop: false});
+    this.fallingEcho = this.sound.add('falling1', {loop: false});
+    this.fallingEffect = this.sound.add('falling2', {loop: false});
 
     
     // fire animation
@@ -131,7 +136,7 @@ gameScene.create = function() {
   this.physics.add.overlap(this.player, this.barrels, this.barrelLose, null, this);
   this.physics.add.overlap(this.player, this.fires, this.fireLose, null, this);
   this.physics.add.overlap(this.player, this.goal, this.goalWin, null, this);
-
+  this.physics.add.overlap(this.player, this.crystal, this.crystalPower, null, this);
   // create game bounds
   this.player.body.setCollideWorldBounds(true);
 
@@ -143,6 +148,11 @@ gameScene.create = function() {
 };
 
 gameScene.update = function() {
+  
+  // restarts game if player falls off map
+  if (this.player.y >= 640) {
+    this.fallingLose();
+  };
   // make sure player is on ground before jumping
   let onGround = this.player.body.touching.down;
   // movement to the left
@@ -218,6 +228,8 @@ gameScene.setupLevel=function(){
       newObject = this.add.tileSprite(curr.x,curr.y,curr.numTiles*width,height,curr.key).setOrigin(0);
   };
 
+  // add in the powerup crystal
+  this.crystal = this.add.sprite(2639, 565, 'crystal').setOrigin(0);
   // enable physics
 
   this.physics.add.existing(newObject, true);
@@ -267,23 +279,49 @@ gameScene.setupLevel=function(){
   this.physics.add.existing(this.player);
 
   // set up camera bounds
-  this.cameras.main.setBounds(0, 0, 360, 700);
+  this.cameras.main.setBounds(0, 0, 3000, 700);
   this.cameras.main.startFollow(this.player);
 
   // adding goal
   this.goal = this.add.sprite(this.levelData.goal.x,this.levelData.goal.y,'goal');
   this.physics.add.existing(this.goal);
 };
+gameScene.fallingLose=function(sourceSprite, targetSprite){ 
+  // play falling sound
+  if (this.playSound > 0) {
+  this.fallingEffect.play();
+  this.playSound--;
+  }
+
+  // logs death reason to console
+  console.warn('you fell for eternity!');
+
+  // slowly fade camera
+  this.cameras.main.fade(1000);
+
+  // finish camera fade and restarts the scene
+  this.cameras.main.on('camerafadeoutcomplete', function(camera, effect) {
+    this.scene.restart();
+    
+  
+  }, this);
+
+};
 gameScene.barrelLose=function(sourceSprite, targetSprite){
   // play barrel sounds
   this.barrel.play();
   this.barrelHurt.play();
+
+  // logs death reason to console
+  console.warn('you got hit by a barrel and got crushed!');
+
   // shake camera
   this.cameras.main.shake(1000);
 
   // finish shake and restart the scene
   this.cameras.main.on('camerashakecomplete', function(camera, effect) {
-    this.scene.restart()
+    this.scene.restart();
+    
   }, this);
 
 };
@@ -291,12 +329,17 @@ gameScene.fireLose=function(sourceSprite, targetSprite){
   // play fire sounds
   this.fire.play();
   this.fireHurt.play();
+
+  // logs death reason to console
+  console.warn('you burnt into a pile of ashes!');
+
   // flase camera
   this.cameras.main.flash();
 
   // finish flash restart the scene
   this.cameras.main.on('cameraflashcomplete', function(camera, effect) {
-    this.scene.restart()
+    this.scene.restart();
+
   }, this);
 
 };
@@ -304,14 +347,31 @@ gameScene.goalWin=function(sourceSprite, targetSprite){
   // play victory sounds
   this.winEffect.play();
   this.winMan.play();
+
+  // logs victory message to console
+  console.log('you win!!!!!!');
+
   // fade camera
 
-  this.cameras.main.fade(500);
+  this.cameras.main.fade(100);
 
   // finish fade out and restart the scene
   this.cameras.main.on('camerafadeoutcomplete', function(camera, effect) {
     this.scene.restart()
   }, this);
+
+};
+
+this.crystalPower=function(){
+  let duration = 15
+  if (duration > 0) {
+    this.playerSpeed = 325;
+    this.jumpSpeed = -500;
+  }
+  if (duration <= 0) {
+    this.playerSpeed = 200
+    this.jumpSpeed = -250;
+  }
 
 };
 
@@ -338,6 +398,9 @@ gameScene.setupSpawner=function(){
       barrel.setVisible(true);
       barrel.body.enable = true;
       // set barrel's properties
+        // size
+        barrel.scaleX = 3;
+        barrel.scaleY = 3;
         // speed
         barrel.setVelocityX(this.levelData.spawner.speed);
         // lifespan
